@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - Kamzy Wardrobe</title>
+  <link rel="stylesheet" href="admin.css" />
+  <script type="module" src="admin.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Kamzy Wardrobe Admin</h1>
+    <div id="storage-bar">
+      <label>Cloudinary Usage:</label>
+      <progress id="storage-progress" value="0" max="100"></progress>
+      <span id="storage-info">Loading...</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="upload-section">
+      <h2>Upload New Product</h2>
+      <form id="uploadForm">
+        <input type="text" id="product-name" placeholder="Product Name" required />
+        <input type="number" id="product-price" placeholder="Price" required />
+        <select id="product-category" required>
+          <option value="">Select Category</option>
+          <option value="tops">Tops</option>
+          <option value="jeans">Jeans</option>
+          <option value="joggers">Joggers</option>
+          <option value="underwear">Underwear</option>
+          <option value="accessories">Accessories</option>
+          <option value="slides">Slides</option>
+          <option value="shoes">Shoes</option>
+        </select>
+        <input type="file" id="product-image" accept="image/*" required />
+        <button type="submit">Upload</button>
+        <p id="feedback"></p>
+      </form>
+    </section>
+
+    <section id="products-container">
+      <!-- Dynamic sections for each category will appear here -->
+    </section>
+  </main>
+</body>
+</html>
