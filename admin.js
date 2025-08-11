@@ -6,17 +6,18 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  updateDoc,
   serverTimestamp,
   query,
-  where
+  getDoc
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 import {
   getAuth,
   signInAnonymously,
-  onAuthStateChanged,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
-// Initialize Firebase
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDIgFyJLUG7Iju45CxKshIlzO-1gB4Eeow",
   authDomain: "kamzy-wardrobe.firebaseapp.com",
@@ -29,87 +30,108 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// DOM Elements
+// DOM refs
 const form = document.getElementById("uploadForm");
 const feedback = document.getElementById("feedback");
 const productsContainer = document.getElementById("products-container");
-const storageBar = document.getElementById("storage-bar");
-const storageText = document.getElementById("storage-text");
+const imageInput = document.getElementById("product-image");
+const preview = document.getElementById("image-preview");
+const oldImageUrlInput = document.getElementById("old-image-url");
+const oldPublicIdInput = document.getElementById("old-public-id");
 
-// Authenticate anonymously
+let editingId = null;
+
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    console.log("✅ Authenticated anonymously:", user.uid);
-    handleUpload();
+    handleForm();
     fetchAndDisplayProducts();
   } else {
-    signInAnonymously(auth).catch((err) => {
-      console.error("❌ Auth error:", err);
+    signInAnonymously(auth).catch(() => {
       feedback.textContent = "❌ Cannot authenticate user.";
     });
   }
 });
 
-// Upload logic
-function handleUpload() {
+function handleForm() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const name = document.getElementById("product-name").value;
     const price = parseFloat(document.getElementById("product-price").value);
     const category = document.getElementById("product-category").value;
-    const imageFile = document.getElementById("product-image").files[0];
-
-    if (!imageFile) {
-      feedback.textContent = "❌ Please select an image.";
-      feedback.style.color = "red";
-      return;
-    }
+    const imageFile = imageInput.files[0];
+    const oldImageUrl = oldImageUrlInput.value;
+    const oldPublicId = oldPublicIdInput.value;
 
     try {
-      const formData = new FormData();
-      formData.append("file", imageFile);
-      formData.append("upload_preset", "kamzy_unsigned");
+      let imageUrl = oldImageUrl;
+      let publicId = oldPublicId;
 
-      const res = await fetch("https://api.cloudinary.com/v1_1/dmltit7tl/image/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok || !data.secure_url) throw new Error("Cloudinary upload failed.");
+      // Upload new image only if selected
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+        formData.append("upload_preset", "kamzy_unsigned");
 
-      const imageUrl = data.secure_url;
-      const publicId = data.public_id;
+        const res = await fetch("https://api.cloudinary.com/v1_1/dmltit7tl/image/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!data.secure_url) throw new Error("Image upload failed");
 
-      await addDoc(collection(db, "products"), {
-        name,
-        price,
-        category,
-        imageUrl,
-        publicId,
-        createdAt: serverTimestamp()
-      });
+        imageUrl = data.secure_url;
+        publicId = data.public_id;
+      }
 
-      feedback.textContent = "✅ Product uploaded!";
+      if (editingId) {
+        await updateDoc(doc(db, "products", editingId), {
+          name,
+          price,
+          category,
+          imageUrl,
+          publicId
+        });
+        feedback.textContent = "✅ Product updated!";
+      } else {
+        if (!imageUrl) {
+          feedback.textContent = "❌ Please select an image.";
+          return;
+        }
+        await addDoc(collection(db, "products"), {
+          name,
+          price,
+          category,
+          imageUrl,
+          publicId,
+          createdAt: serverTimestamp(),
+        });
+        feedback.textContent = "✅ Product uploaded!";
+      }
+
       feedback.style.color = "green";
       form.reset();
+      preview.src = "";
+      preview.style.display = "none";
+      oldImageUrlInput.value = "";
+      oldPublicIdInput.value = "";
+      imageInput.required = true; // reset required for new upload
+      editingId = null;
       fetchAndDisplayProducts();
     } catch (err) {
       console.error(err);
-      feedback.textContent = "❌ Upload failed.";
+      feedback.textContent = "❌ Operation failed.";
       feedback.style.color = "red";
     }
   });
 }
 
-// Load products grouped by category
 async function fetchAndDisplayProducts() {
-  productsContainer.innerHTML = ""; // Clear before loading
-
+  productsContainer.innerHTML = "";
   const q = query(collection(db, "products"));
   const snapshot = await getDocs(q);
 
   const categories = {};
-  let totalSizeKB = 0;
 
   snapshot.forEach((docSnap) => {
     const data = docSnap.data();
@@ -117,15 +139,8 @@ async function fetchAndDisplayProducts() {
 
     if (!categories[data.category]) categories[data.category] = [];
     categories[data.category].push({ id, ...data });
-
-    // Estimate image size in KB if available
-    if (data.imageUrl) {
-      const kbMatch = data.imageUrl.match(/\/upload\/.*?\/v\d+\/.*?_(\d+)\.jpg/);
-      if (kbMatch) totalSizeKB += parseInt(kbMatch[1]);
-    }
   });
 
-  // Display grouped by category
   Object.entries(categories).forEach(([category, items]) => {
     const section = document.createElement("section");
     section.innerHTML = `<h2>${category.toUpperCase()}</h2>`;
@@ -138,8 +153,9 @@ async function fetchAndDisplayProducts() {
       div.innerHTML = `
         <img src="${item.imageUrl}" alt="${item.name}" />
         <h4>${item.name}</h4>
-        <p>$${item.price}</p>
-        <button data-id="${item.id}" data-publicid="${item.publicId}">Delete</button>
+        <p>₦${parseFloat(item.price).toLocaleString()}</p>  
+        <button class="edit-btn" data-id="${item.id}">Edit</button>
+        <button class="delete-btn" data-id="${item.id}" data-publicid="${item.publicId}">Delete</button>
       `;
       grid.appendChild(div);
     });
@@ -147,36 +163,38 @@ async function fetchAndDisplayProducts() {
     section.appendChild(grid);
     productsContainer.appendChild(section);
   });
-
-  updateStorageBar(totalSizeKB);
 }
 
-// Delete
+// Delete & Edit
 productsContainer.addEventListener("click", async (e) => {
-  if (e.target.tagName === "BUTTON") {
+  if (e.target.classList.contains("delete-btn")) {
     const id = e.target.dataset.id;
-    const publicId = e.target.dataset.publicid;
+    await deleteDoc(doc(db, "products", id));
+    fetchAndDisplayProducts();
+  }
 
-    try {
-      await deleteDoc(doc(db, "products", id));
-      await fetch(`https://api.cloudinary.com/v1_1/dmltit7tl/delete_by_token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: publicId }) // Only works if token available
-      });
+  if (e.target.classList.contains("edit-btn")) {
+    const id = e.target.dataset.id;
+    const docSnap = await getDoc(doc(db, "products", id));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      document.getElementById("product-name").value = data.name;
+      document.getElementById("product-price").value = data.price;
+      document.getElementById("product-category").value = data.category;
+      oldImageUrlInput.value = data.imageUrl;
+      oldPublicIdInput.value = data.publicId;
 
-      fetchAndDisplayProducts();
-    } catch (err) {
-      console.error("Delete failed:", err);
+      // Show preview of old image
+      preview.src = data.imageUrl;
+      preview.style.display = "block";
+
+      // Make image input optional in edit mode
+      imageInput.required = false;
+
+      editingId = id;
+      feedback.textContent = "🔄 Edit mode activated!";
+      feedback.style.color = "blue";
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
 });
-
-// Simulated Storage Bar
-function updateStorageBar(usedKB) {
-  const maxKB = 1024 * 100; // Simulate 100MB
-  const percent = Math.min((usedKB / maxKB) * 100, 100).toFixed(1);
-
-  storageBar.style.width = `${percent}%`;
-  storageText.textContent = `Storage Used: ${usedKB.toFixed(1)} KB / 100MB (${percent}%)`;
-}

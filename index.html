@@ -10,19 +10,25 @@
 <body>
   <header>
     <h1>Kamzy Wardrobe Admin</h1>
-    <div id="storage-bar">
-      <label>Cloudinary Usage:</label>
-      <progress id="storage-progress" value="0" max="100"></progress>
-      <span id="storage-info">Loading...</span>
+
+    <div id="cloudinary-capacity">
+      <div id="storage-text"></div>
+      <div class="bar-wrapper"><div id="storage-bar" class="bar-fill"></div></div>
+    </div>
+
+    <div id="firebase-capacity">
+      <div id="firebase-text"></div>
+      <div class="bar-wrapper"><div id="firebase-bar" class="bar-fill"></div></div>
     </div>
   </header>
 
   <main>
     <section class="upload-section">
-      <h2>Upload New Product</h2>
+      <h2>Upload / Edit Product</h2>
       <form id="uploadForm">
         <input type="text" id="product-name" placeholder="Product Name" required />
         <input type="number" id="product-price" placeholder="Price" required />
+        
         <select id="product-category" required>
           <option value="">Select Category</option>
           <option value="tops">Tops</option>
@@ -33,8 +39,18 @@
           <option value="slides">Slides</option>
           <option value="shoes">Shoes</option>
         </select>
-        <input type="file" id="product-image" accept="image/*" required />
-        <button type="submit">Upload</button>
+
+        <!-- Preview old/new image -->
+        <img id="image-preview" src="" alt="Preview" style="display:none; max-width:150px; margin-top:10px;">
+
+        <!-- File input (not required for editing) -->
+        <input type="file" id="product-image" accept="image/*">
+
+        <!-- Hidden fields to store old image data -->
+        <input type="hidden" id="old-image-url">
+        <input type="hidden" id="old-public-id">
+
+        <button type="submit">Save Product</button>
         <p id="feedback"></p>
       </form>
     </section>
