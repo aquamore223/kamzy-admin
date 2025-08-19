@@ -2,62 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Panel - Kamzy Wardrobe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kamzy Admin</title>
   <link rel="stylesheet" href="admin.css" />
   <script type="module" src="admin.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>Kamzy Wardrobe Admin</h1>
+  <!-- LOGIN -->
+  <section id="login-section" class="card narrow">
+    <h2>Admin Login</h2>
+    <input type="text" id="login-username" placeholder="Username" />
+    <input type="password" id="login-password" placeholder="Password" />
+    <button id="login-btn">Login</button>
+    <p id="login-feedback" class="muted"></p>
+  </section>
 
-    <div id="cloudinary-capacity">
-      <div id="storage-text"></div>
-      <div class="bar-wrapper"><div id="storage-bar" class="bar-fill"></div></div>
-    </div>
+  <!-- ADMIN -->
+  <section id="admin-section" class="hidden">
+    <header class="topbar">
+      <h1>Kamzy Admin Panel</h1>
+      <div class="topbar-actions">
+        <button id="logout-btn" class="danger">Logout</button>
+      </div>
+    </header>
 
-    <div id="firebase-capacity">
-      <div id="firebase-text"></div>
-      <div class="bar-wrapper"><div id="firebase-bar" class="bar-fill"></div></div>
-    </div>
-  </header>
+    <!-- BULK ADD -->
+    <section class="card">
+      <h2>Add Products</h2>
 
-  <main>
-    <section class="upload-section">
-      <h2>Upload / Edit Product</h2>
-      <form id="uploadForm">
-        <input type="text" id="product-name" placeholder="Product Name" required />
-        <input type="number" id="product-price" placeholder="Price" required />
-        
-        <select id="product-category" required>
-          <option value="">Select Category</option>
-          <option value="tops">Tops</option>
-          <option value="jeans">Jeans</option>
-          <option value="joggers">Joggers</option>
-          <option value="underwear">Underwear</option>
-          <option value="accessories">Accessories</option>
-          <option value="slides">Slides</option>
-          <option value="shoes">Shoes</option>
-        </select>
+      <label for="bulk-category" class="label">Category</label>
+      <select id="bulk-category" class="input">
+        <option value="tops">Tops</option>
+        <option value="jeans">Jeans</option>
+        <option value="joggers">Joggers</option>
+        <option value="underwear">Underwear</option>
+        <option value="accessories">Accessories</option>
+        <option value="slides">Slides</option>
+        <option value="shoes">Shoes</option>
+      </select>
 
-        <!-- Preview old/new image -->
-        <img id="image-preview" src="" alt="Preview" style="display:none; max-width:150px; margin-top:10px;">
+      <div id="product-forms"></div>
 
-        <!-- File input (not required for editing) -->
-        <input type="file" id="product-image" accept="image/*">
-
-        <!-- Hidden fields to store old image data -->
-        <input type="hidden" id="old-image-url">
-        <input type="hidden" id="old-public-id">
-
-        <button type="submit">Save Product</button>
-        <p id="feedback"></p>
-      </form>
+      <div class="row gap">
+        <button id="add-product-btn">+ Add Product</button>
+        <button id="save-all-btn" class="primary">Save All</button>
+      </div>
+      <p id="upload-feedback" class="muted"></p>
     </section>
 
-    <section id="products-container">
-      <!-- Dynamic sections for each category will appear here -->
+    <!-- PREVIEW / MANAGE -->
+    <section class="card">
+      <h2>Products</h2>
+      <div id="products-container"></div>
     </section>
-  </main>
+  </section>
 </body>
 </html>
