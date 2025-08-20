@@ -149,3 +149,18 @@ button.danger { background: #dc3545; color: #fff; }
   color: white;
   font-size: 0.75rem;
 }
+
+#product-forms{
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  width: 100%;
+}
+
+#product-forms img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
